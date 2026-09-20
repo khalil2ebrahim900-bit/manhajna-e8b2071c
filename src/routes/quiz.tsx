@@ -39,7 +39,7 @@ function QuizPage() {
   const { data: profile, user, authLoading } = useProfile();
   const makeQuiz = useServerFn(generateQuiz);
 
-  const [subject, setSubject] = useState(SUBJECTS[0]);
+  const [subject, setSubject] = useState<string>("الرياضيات");
   const [difficulty, setDifficulty] = useState<"easy" | "hard">("easy");
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [index, setIndex] = useState(0);
