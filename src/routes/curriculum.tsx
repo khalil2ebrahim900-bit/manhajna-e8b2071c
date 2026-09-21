@@ -51,8 +51,9 @@ function CurriculumPage() {
   const subjects = CURRICULUM[grade] ?? [];
 
   const loadExplanation = async (s: Subject, unitIndex: number, lessonIndex: number) => {
-    const unit = s.semesters[semester][unitIndex];
-    const lesson = unit.lessons[lessonIndex];
+    const unit = s.semesters[semester][ui(unitIndex)];
+    const lesson = unit?.lessons[ui(lessonIndex)];
+    if (!unit || !lesson) return;
     const key = `${grade}-${s.id}-${semester}-${unitIndex}-${lessonIndex}`;
     if (explanations[key] || loadingLesson) return;
     setLoadingLesson(key);
