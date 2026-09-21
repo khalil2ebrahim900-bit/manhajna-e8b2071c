@@ -60,6 +60,33 @@ export const askAssistant = createServerFn({ method: "POST" })
     return { answer: await result.text };
   });
 
+const LessonInput = z.object({
+  subject: z.string().min(1).max(60),
+  grade: z.number().int().min(7).max(9),
+  semester: z.number().int().min(1).max(2),
+  unit: z.string().min(1).max(120),
+  lesson: z.string().min(1).max(160),
+});
+
+export const explainLesson = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => LessonInput.parse(input))
+  .handler(async ({ data }) => {
+    const lovable = gateway();
+    const result = streamText({
+      model: lovable.responses(MODEL),
+      system: `أنت "مساعد منهجنا"، معلم ودود لطلاب المرحلة الإعدادية في مملكة البحرين (الصف ${data.grade}).
+- اشرح بالعربية الفصحى المبسطة مع لمسة خليجية ودودة.
+- التزم بالمنهج البحريني لمادة ${data.subject}.
+- نظّم الشرح: فكرة الدرس، المفاهيم الأساسية، مثال تطبيقي، ونصيحة للمذاكرة.
+- اجعل الشرح واضحاً ومختصراً (أقل من 300 كلمة).`,
+      prompt: `اشرح درس "${data.lesson}" من وحدة "${data.unit}" في مادة ${data.subject} للصف ${data.grade} (الفصل الدراسي ${data.semester}).`,
+      providerOptions: reasoning,
+    });
+
+    return { explanation: await result.text };
+  });
+
 const QuizInput = z.object({
   subject: z.string().min(1).max(60),
   grade: z.number().int().min(7).max(9),
