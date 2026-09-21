@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as CurriculumRouteImport } from './routes/curriculum'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as SetupRouteImport } from './routes/setup'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CurriculumRoute = CurriculumRouteImport.update({
+  id: '/curriculum',
+  path: '/curriculum',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -44,6 +50,7 @@ const SetupRoute = SetupRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/curriculum': typeof CurriculumRoute
   '/dashboard': typeof DashboardRoute
   '/quiz': typeof QuizRoute
   '/setup': typeof SetupRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/curriculum': typeof CurriculumRoute
   '/dashboard': typeof DashboardRoute
   '/quiz': typeof QuizRoute
   '/setup': typeof SetupRoute
@@ -59,21 +67,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/curriculum': typeof CurriculumRoute
   '/dashboard': typeof DashboardRoute
   '/quiz': typeof QuizRoute
   '/setup': typeof SetupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/chat' | '/dashboard' | '/quiz' | '/setup'
+  fullPaths: '/' | '/chat' | '/curriculum' | '/dashboard' | '/quiz' | '/setup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chat' | '/dashboard' | '/quiz' | '/setup'
-  id: '__root__' | '/' | '/chat' | '/dashboard' | '/quiz' | '/setup'
+  to: '/' | '/chat' | '/curriculum' | '/dashboard' | '/quiz' | '/setup'
+  id:
+    | '__root__'
+    | '/'
+    | '/chat'
+    | '/curriculum'
+    | '/dashboard'
+    | '/quiz'
+    | '/setup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatRoute: typeof ChatRoute
+  CurriculumRoute: typeof CurriculumRoute
   DashboardRoute: typeof DashboardRoute
   QuizRoute: typeof QuizRoute
   SetupRoute: typeof SetupRoute
@@ -93,6 +110,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/curriculum': {
+      id: '/curriculum'
+      path: '/curriculum'
+      fullPath: '/curriculum'
+      preLoaderRoute: typeof CurriculumRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -122,6 +146,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatRoute: ChatRoute,
+  CurriculumRoute: CurriculumRoute,
   DashboardRoute: DashboardRoute,
   QuizRoute: QuizRoute,
   SetupRoute: SetupRoute,
