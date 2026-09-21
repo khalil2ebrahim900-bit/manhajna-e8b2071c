@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 import { AppHeader } from "@/components/AppHeader";
 import { useProfile } from "@/hooks/useProfile";
-import { CURRICULUM, EDUNET_URL, GRADE_NAMES, type Subject } from "@/lib/curriculum";
+import { CURRICULUM, EDUNET_URL, GRADE_NAMES, type Subject, type Unit } from "@/lib/curriculum";
 import { explainLesson } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/curriculum")({
