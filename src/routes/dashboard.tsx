@@ -67,6 +67,18 @@ function DashboardPage() {
               <span className="text-[15px] leading-snug font-bold">الامتحانات</span>
             </Link>
           </div>
+          <Link
+            to="/curriculum"
+            className="mt-3 flex items-center justify-between rounded-2xl bg-white p-4 text-right ring-1 ring-border transition-colors hover:bg-background"
+          >
+            <span className="flex items-center gap-3">
+              <span className="grid size-9 place-items-center rounded-xl bg-primary-soft font-black text-primary">
+                📚
+              </span>
+              <span className="text-[15px] font-bold">المنهج كامل — الفصل الأول والثاني</span>
+            </span>
+            <span className="font-plex text-[11px] text-muted-foreground">كل المواد</span>
+          </Link>
         </div>
 
         <div className="glass-card rise p-5">
