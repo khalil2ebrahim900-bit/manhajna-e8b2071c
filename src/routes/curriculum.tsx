@@ -51,7 +51,7 @@ function CurriculumPage() {
   const subjects = CURRICULUM[grade] ?? [];
 
   const loadExplanation = async (s: Subject, unitIndex: number, lessonIndex: number) => {
-    const unit = s.semesters[semester][unitIndex] as (typeof s.semesters)[1][number] | undefined;
+    const unit: Unit | undefined = s.semesters[semester][unitIndex];
     const lesson = unit?.lessons[lessonIndex];
     if (!unit || !lesson) return;
     const key = `${grade}-${s.id}-${semester}-${unitIndex}-${lessonIndex}`;
