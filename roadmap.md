@@ -1,0 +1,2 @@
+- [ ] Simplify entry screen: no Google or email login; collect only full name and grade from sixth to third intermediate.
+- [ ] Keep the dashboard, AI, quizzes, curriculum, and achievements usable with the simplified student profile.
