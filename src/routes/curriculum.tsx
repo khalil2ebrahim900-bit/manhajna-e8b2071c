@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { useProfile } from "@/hooks/useProfile";
 import { CURRICULUM, EDUNET_URL, GRADE_NAMES, type Subject, type Unit } from "@/lib/curriculum";
 import { explainLesson } from "@/lib/ai.functions";
+import { GRADE_OPTIONS } from "@/lib/student-profile";
 
 export const Route = createFileRoute("/curriculum")({
   head: () => ({
@@ -14,12 +15,12 @@ export const Route = createFileRoute("/curriculum")({
       {
         name: "description",
         content:
-          "تصفح منهج المرحلة الإعدادية البحريني كاملاً لكل المواد من الفصل الأول إلى الثاني، مع شرح ذكي لكل درس وروابط المحتوى الرسمي.",
+          "تصفح المنهج البحريني كاملاً لكل المواد من السادس ابتدائي إلى الثالث إعدادي، مع شرح ذكي وروابط المحتوى الرسمي.",
       },
       { property: "og:title", content: "المنهج البحريني — منهجنا" },
       {
         property: "og:description",
-        content: "كل مواد الصفوف السابع والثامن والتاسع، فصل أول وثاني، مع شرح ذكي لكل درس.",
+        content: "كل المواد من السادس ابتدائي إلى الثالث إعدادي، فصل أول وثاني، مع شرح ذكي لكل درس.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -32,7 +33,7 @@ type LessonKey = string;
 
 function CurriculumPage() {
   const navigate = useNavigate();
-  const { data: profile, user, authLoading } = useProfile();
+  const { data: profile, authLoading } = useProfile();
   const [grade, setGrade] = useState<number>(7);
   const [subject, setSubject] = useState<Subject | null>(null);
   const [semester, setSemester] = useState<1 | 2>(1);
@@ -41,8 +42,8 @@ function CurriculumPage() {
   const [loadingLesson, setLoadingLesson] = useState<LessonKey | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/" });
-  }, [authLoading, user, navigate]);
+    if (!authLoading && !profile) navigate({ to: "/" });
+  }, [authLoading, profile, navigate]);
 
   useEffect(() => {
     if (profile?.grade) setGrade(profile.grade);
@@ -81,22 +82,22 @@ function CurriculumPage() {
         <AppHeader subtitle="المنهج البحريني" />
 
         {/* اختيار الصف */}
-        <div className="glass-card rise flex gap-2 p-3">
-          {[7, 8, 9].map((g) => (
+        <div className="glass-card rise grid grid-cols-2 gap-2 p-3">
+          {GRADE_OPTIONS.map((option) => (
             <button
-              key={g}
+              key={option.value}
               onClick={() => {
-                setGrade(g);
+                setGrade(option.value);
                 setSubject(null);
                 setOpenUnit(0);
               }}
               className={`flex-1 rounded-2xl py-2.5 text-sm font-bold transition-colors ${
-                grade === g
+                grade === option.value
                   ? "bg-primary text-primary-foreground ring-1 ring-primary"
                   : "bg-white text-foreground/70 ring-1 ring-border hover:bg-background"
               }`}
             >
-              {GRADE_NAMES[g]}
+              {option.label}
             </button>
           ))}
         </div>

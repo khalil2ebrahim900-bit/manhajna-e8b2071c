@@ -28,7 +28,7 @@ type Message = { role: "user" | "assistant"; content: string };
 
 function ChatPage() {
   const navigate = useNavigate();
-  const { data: profile, user, authLoading } = useProfile();
+  const { data: profile, authLoading } = useProfile();
   const ask = useServerFn(askAssistant);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -36,8 +36,8 @@ function ChatPage() {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/" });
-  }, [authLoading, user, navigate]);
+    if (!authLoading && !profile) navigate({ to: "/" });
+  }, [authLoading, profile, navigate]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,7 +53,7 @@ function ChatPage() {
     setBusy(true);
     try {
       const result = await ask({
-        data: { question, grade: profile?.grade ?? 9, history },
+        data: { question, grade: profile?.grade ?? 7, history },
       });
       setMessages((prev) => [...prev, { role: "assistant", content: result.answer }]);
     } catch {

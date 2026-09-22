@@ -23,19 +23,13 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { data: profile, user, authLoading, isLoading } = useProfile();
+  const { data: profile, authLoading } = useProfile();
 
   useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/" });
-  }, [authLoading, user, navigate]);
+    if (!authLoading && !profile) navigate({ to: "/" });
+  }, [authLoading, profile, navigate]);
 
-  useEffect(() => {
-    if (user && !isLoading && profile && (!profile.grade || !profile.gender)) {
-      navigate({ to: "/setup" });
-    }
-  }, [user, isLoading, profile, navigate]);
-
-  const greeting = profile?.full_name ? `أهلاً يا ${profile.full_name} 👋` : "أهلاً وسهلاً 👋";
+  const greeting = profile?.full_name ? `مرحباً ${profile.full_name} 👋` : "أهلاً وسهلاً 👋";
 
   return (
     <div className="flex min-h-screen justify-center p-4">
@@ -55,7 +49,7 @@ function DashboardPage() {
               <span className="grid size-9 place-items-center rounded-xl bg-white/25 font-black">
                 AI
               </span>
-              <span className="text-[15px] leading-snug font-bold">حل الواجبات والأسئلة</span>
+              <span className="text-[15px] leading-snug font-bold">منهجنا AI</span>
             </Link>
             <Link
               to="/quiz"
@@ -67,6 +61,18 @@ function DashboardPage() {
               <span className="text-[15px] leading-snug font-bold">الامتحانات</span>
             </Link>
           </div>
+          <Link
+            to="/achievements"
+            className="mt-3 flex items-center justify-between rounded-2xl bg-white p-4 text-right ring-1 ring-border transition-colors hover:bg-background"
+          >
+            <span className="flex items-center gap-3">
+              <span className="grid size-9 place-items-center rounded-xl bg-highlight/25 font-black">
+                ✓
+              </span>
+              <span className="text-[15px] font-bold">إنجازاتي</span>
+            </span>
+            <span className="font-plex text-[11px] text-muted-foreground">اختباراتي</span>
+          </Link>
           <Link
             to="/curriculum"
             className="mt-3 flex items-center justify-between rounded-2xl bg-white p-4 text-right ring-1 ring-border transition-colors hover:bg-background"
@@ -90,7 +96,7 @@ function DashboardPage() {
             to="/setup"
             className="mt-4 inline-block rounded-full border border-border px-4 py-2 text-[13px] font-bold text-muted-foreground"
           >
-            تعديل الصف والجنس
+            تعديل الاسم والمرحلة
           </Link>
         </div>
 
