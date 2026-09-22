@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as CurriculumRouteImport } from './routes/curriculum'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -19,6 +20,11 @@ import { Route as SetupRouteImport } from './routes/setup'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AchievementsRoute = AchievementsRouteImport.update({
+  id: '/achievements',
+  path: '/achievements',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -49,6 +55,7 @@ const SetupRoute = SetupRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
   '/chat': typeof ChatRoute
   '/curriculum': typeof CurriculumRoute
   '/dashboard': typeof DashboardRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
   '/chat': typeof ChatRoute
   '/curriculum': typeof CurriculumRoute
   '/dashboard': typeof DashboardRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
   '/chat': typeof ChatRoute
   '/curriculum': typeof CurriculumRoute
   '/dashboard': typeof DashboardRoute
@@ -74,12 +83,27 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/chat' | '/curriculum' | '/dashboard' | '/quiz' | '/setup'
+  fullPaths:
+    | '/'
+    | '/achievements'
+    | '/chat'
+    | '/curriculum'
+    | '/dashboard'
+    | '/quiz'
+    | '/setup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chat' | '/curriculum' | '/dashboard' | '/quiz' | '/setup'
+  to:
+    | '/'
+    | '/achievements'
+    | '/chat'
+    | '/curriculum'
+    | '/dashboard'
+    | '/quiz'
+    | '/setup'
   id:
     | '__root__'
     | '/'
+    | '/achievements'
     | '/chat'
     | '/curriculum'
     | '/dashboard'
@@ -89,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AchievementsRoute: typeof AchievementsRoute
   ChatRoute: typeof ChatRoute
   CurriculumRoute: typeof CurriculumRoute
   DashboardRoute: typeof DashboardRoute
@@ -103,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/achievements': {
+      id: '/achievements'
+      path: '/achievements'
+      fullPath: '/achievements'
+      preLoaderRoute: typeof AchievementsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -145,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AchievementsRoute: AchievementsRoute,
   ChatRoute: ChatRoute,
   CurriculumRoute: CurriculumRoute,
   DashboardRoute: DashboardRoute,

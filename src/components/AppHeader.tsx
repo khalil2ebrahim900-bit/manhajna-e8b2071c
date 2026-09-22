@@ -1,14 +1,13 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 
-import { supabase } from "@/integrations/supabase/client";
 import { GRADE_LABELS, useProfile } from "@/hooks/useProfile";
 
 export function AppHeader({ subtitle }: { subtitle?: string }) {
-  const { data: profile } = useProfile();
+  const { data: profile, clearProfile } = useProfile();
   const navigate = useNavigate();
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    clearProfile();
     navigate({ to: "/" });
   };
 

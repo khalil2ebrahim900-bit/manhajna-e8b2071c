@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AppHeader } from "@/components/AppHeader";
-import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { CURRICULUM } from "@/lib/curriculum";
 import { generateQuiz } from "@/lib/ai.functions";
+import { recordQuizResult } from "@/lib/student-progress";
 
 export const Route = createFileRoute("/quiz")({
   head: () => ({
@@ -14,18 +15,16 @@ export const Route = createFileRoute("/quiz")({
       { title: "الامتحانات — منهجنا" },
       {
         name: "description",
-        content: "امتحانات قصيرة بالاختيارات على المنهج البحريني، اختر مستوى سهل أو صعب.",
+        content: "امتحانات بالاختيارات لكل مادة من المنهج البحريني: سهل 10 أسئلة أو صعب 15 سؤال.",
       },
       { property: "og:title", content: "الامتحانات — منهجنا" },
-      { property: "og:description", content: "اختبر نفسك بمستوى سهل أو صعب واعرف درجتك فوراً." },
+      { property: "og:description", content: "اختبر نفسك في كل مادة بسهل 10 أسئلة أو صعب 15 سؤال." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
   component: QuizPage,
 });
-
-const SUBJECTS = ["الرياضيات", "العلوم", "اللغة العربية", "اللغة الإنجليزية", "الاجتماعيات"];
 
 type Question = {
   question: string;
@@ -36,7 +35,7 @@ type Question = {
 
 function QuizPage() {
   const navigate = useNavigate();
-  const { data: profile, user, authLoading } = useProfile();
+  const { data: profile, authLoading } = useProfile();
   const makeQuiz = useServerFn(generateQuiz);
 
   const [subject, setSubject] = useState<string>("الرياضيات");
@@ -48,15 +47,27 @@ function QuizPage() {
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const activeGrade = profile?.grade ?? 7;
+  const subjects = useMemo(
+    () => (CURRICULUM[activeGrade] ?? CURRICULUM[7] ?? []).map((item) => item.name),
+    [activeGrade],
+  );
+  const questionCount = difficulty === "easy" ? 10 : 15;
+
   useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/" });
-  }, [authLoading, user, navigate]);
+    if (!authLoading && !profile) navigate({ to: "/" });
+  }, [authLoading, profile, navigate]);
+
+  useEffect(() => {
+    const firstSubject = subjects[0];
+    if (firstSubject && !subjects.includes(subject)) setSubject(firstSubject);
+  }, [subject, subjects]);
 
   const start = async () => {
     setBusy(true);
     try {
       const result = await makeQuiz({
-        data: { subject, difficulty, grade: profile?.grade ?? 9 },
+        data: { subject, difficulty, grade: activeGrade, questionCount },
       });
       if (!result.questions.length) throw new Error("empty");
       setQuestions(result.questions);
@@ -79,15 +90,7 @@ function QuizPage() {
       return;
     }
     setDone(true);
-    if (user) {
-      await supabase.from("quiz_results").insert({
-        user_id: user.id,
-        subject,
-        difficulty,
-        score,
-        total: questions.length,
-      });
-    }
+    recordQuizResult({ answered: questions.length, correct: score });
   };
 
   const current = questions?.[index];
@@ -101,7 +104,7 @@ function QuizPage() {
           <div className="glass-card rise p-5">
             <h3 className="text-[15px] font-bold">جهّز امتحانك</h3>
             <div className="mt-4 flex flex-wrap gap-2">
-              {SUBJECTS.map((item) => (
+              {subjects.map((item) => (
                 <button
                   key={item}
                   onClick={() => setSubject(item)}
@@ -118,8 +121,8 @@ function QuizPage() {
             <div className="mt-4 flex gap-2">
               {(
                 [
-                  { value: "easy", label: "سهل" },
-                  { value: "hard", label: "صعب" },
+                  { value: "easy", label: "سهل · 10 أسئلة" },
+                  { value: "hard", label: "صعب · 15 سؤال" },
                 ] as const
               ).map((level) => (
                 <button
@@ -140,7 +143,7 @@ function QuizPage() {
               disabled={busy}
               className="mt-4 w-full rounded-2xl bg-foreground py-3 text-[15px] font-bold text-white transition-colors hover:bg-foreground/90 disabled:opacity-60"
             >
-              {busy ? "جاري تجهيز الأسئلة…" : "ابدأ الامتحان"}
+              {busy ? "جاري تجهيز الأسئلة…" : `ابدأ الامتحان · ${questionCount} ${questionCount === 10 ? "أسئلة" : "سؤال"}`}
             </button>
           </div>
         )}

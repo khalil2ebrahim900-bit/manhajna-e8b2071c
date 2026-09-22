@@ -1,2 +1,3 @@
-- [ ] Simplify entry screen: no Google or email login; collect only full name and grade from sixth to third intermediate.
-- [ ] Keep the dashboard, AI, quizzes, curriculum, and achievements usable with the simplified student profile.
+- [x] Simplify entry screen: no Google or email login; collect only full name and grade from sixth to third intermediate.
+- [x] Keep the dashboard, AI, quizzes, curriculum, and achievements usable with the simplified student profile.
+- [x] Set quizzes per subject to easy 10 questions and hard 15 questions.

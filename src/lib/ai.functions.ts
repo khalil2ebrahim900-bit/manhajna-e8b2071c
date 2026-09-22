@@ -3,7 +3,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { Output, streamText } from "ai";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayRunIdFetch } from "./ai-gateway.server";
 
 const MODEL = "openai/gpt-6-astra";
@@ -30,7 +29,7 @@ const reasoning = {
 
 const AskInput = z.object({
   question: z.string().min(1).max(4000),
-  grade: z.number().int().min(7).max(9),
+  grade: z.number().int().min(6).max(9),
   history: z
     .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() }))
     .max(20)
@@ -38,7 +37,6 @@ const AskInput = z.object({
 });
 
 export const askAssistant = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => AskInput.parse(input))
   .handler(async ({ data }) => {
     const lovable = gateway();
@@ -62,14 +60,13 @@ export const askAssistant = createServerFn({ method: "POST" })
 
 const LessonInput = z.object({
   subject: z.string().min(1).max(60),
-  grade: z.number().int().min(7).max(9),
+  grade: z.number().int().min(6).max(9),
   semester: z.number().int().min(1).max(2),
   unit: z.string().min(1).max(120),
   lesson: z.string().min(1).max(160),
 });
 
 export const explainLesson = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => LessonInput.parse(input))
   .handler(async ({ data }) => {
     const lovable = gateway();
@@ -90,8 +87,9 @@ export const explainLesson = createServerFn({ method: "POST" })
 
 const QuizInput = z.object({
   subject: z.string().min(1).max(60),
-  grade: z.number().int().min(7).max(9),
+  grade: z.number().int().min(6).max(9),
   difficulty: z.enum(["easy", "hard"]),
+  questionCount: z.union([z.literal(10), z.literal(15)]),
 });
 
 const QuizSchema = z.object({
@@ -108,7 +106,6 @@ const QuizSchema = z.object({
 export type Quiz = z.infer<typeof QuizSchema>;
 
 export const generateQuiz = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => QuizInput.parse(input))
   .handler(async ({ data }) => {
     const lovable = gateway();
@@ -117,7 +114,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
       model: lovable.responses(MODEL),
       system:
         "أنت معلم بحريني تصمم اختبارات قصيرة للمرحلة الإعدادية حسب المنهج البحريني. اكتب كل النصوص بالعربية.",
-      prompt: `أنشئ 5 أسئلة اختيار من متعدد في مادة ${data.subject} لطالب الصف ${data.grade}، بمستوى ${level}.
+      prompt: `أنشئ ${data.questionCount} سؤال اختيار من متعدد في مادة ${data.subject} لطالب الصف ${data.grade} حسب المنهج البحريني الرسمي كما في محتوى وزارة التربية، بمستوى ${level}.
 لكل سؤال أربعة اختيارات بالضبط، وحدد رقم الاختيار الصحيح (0 إلى 3)، واكتب شرحاً قصيراً للإجابة الصحيحة.`,
       output: Output.object({ schema: QuizSchema }),
       providerOptions: reasoning,
@@ -127,7 +124,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
     return {
       questions: quiz.questions
         .filter((q) => q.choices.length === 4)
-        .slice(0, 5)
+        .slice(0, data.questionCount)
         .map((q) => ({
           ...q,
           correctIndex: Math.min(Math.max(q.correctIndex, 0), 3),

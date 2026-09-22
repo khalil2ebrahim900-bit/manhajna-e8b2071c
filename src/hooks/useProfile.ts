@@ -1,37 +1,56 @@
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
 
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
+import {
+  clearStoredProfile,
+  getStoredProfile,
+  GRADE_LABELS,
+  saveStoredProfile,
+  type GradeValue,
+  type StudentProfile,
+} from "@/lib/student-profile";
 
-export type Profile = {
-  id: string;
-  full_name: string | null;
-  gender: "male" | "female" | null;
-  grade: number | null;
-};
+export type Profile = StudentProfile;
 
 export function useProfile() {
-  const { user, loading } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const query = useQuery({
-    queryKey: ["profile", user?.id],
-    enabled: Boolean(user?.id),
-    queryFn: async (): Promise<Profile | null> => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, gender, grade")
-        .eq("id", user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return (data as Profile) ?? null;
-    },
-  });
+  const load = useCallback(() => {
+    setProfile(getStoredProfile());
+    setLoading(false);
+  }, []);
 
-  return { ...query, authLoading: loading, user };
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const saveProfile = useCallback((input: { full_name: string; grade: GradeValue }) => {
+    const next = saveStoredProfile(input);
+    setProfile(next);
+    return next;
+  }, []);
+
+  const clearProfile = useCallback(() => {
+    clearStoredProfile();
+    setProfile(null);
+  }, []);
+
+  const refetch = useCallback(async () => {
+    const next = getStoredProfile();
+    setProfile(next);
+    setLoading(false);
+    return { data: next };
+  }, []);
+
+  return {
+    data: profile,
+    authLoading: loading,
+    isLoading: loading,
+    user: profile ? { id: profile.id } : null,
+    refetch,
+    saveProfile,
+    clearProfile,
+  };
 }
 
-export const GRADE_LABELS: Record<number, string> = {
-  7: "الصف السابع",
-  8: "الصف الثامن",
-  9: "الصف التاسع",
-};
+export { GRADE_LABELS };

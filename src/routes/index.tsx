@@ -2,9 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { lovable } from "@/integrations/lovable/index";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { GRADE_OPTIONS, isGradeValue, type GradeValue } from "@/lib/student-profile";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,51 +28,27 @@ export const Route = createFileRoute("/")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { session, loading } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { data: profile, authLoading, saveProfile } = useProfile();
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [grade, setGrade] = useState<GradeValue | "">("");
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/dashboard" });
-  }, [loading, session, navigate]);
+    if (!authLoading && profile) navigate({ to: "/dashboard" });
+  }, [authLoading, profile, navigate]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setBusy(true);
-    try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: { full_name: name },
-          },
-        });
-        if (error) throw error;
-        toast.success("تم إنشاء الحساب! تحقق من بريدك لتأكيد التسجيل.");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذّر إكمال العملية");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const googleSignIn = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error("تعذّر الدخول عبر Google");
+    const fullName = name.trim();
+    if (fullName.split(/\s+/).length < 3) {
+      toast.error("اكتب الاسم الثلاثي");
       return;
     }
+    if (!grade) {
+      toast.error("اختر المرحلة");
+      return;
+    }
+    saveProfile({ full_name: fullName, grade });
+    navigate({ to: "/dashboard" });
   };
 
   return (
@@ -95,56 +70,36 @@ function AuthPage() {
           </div>
 
           <form onSubmit={submit} className="relative mt-6 space-y-2">
-            {mode === "signup" && (
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="اسمك"
-                className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/5 outline-none placeholder:text-muted-foreground focus:ring-primary/40"
-              />
-            )}
             <input
-              type="email"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="البريد الإلكتروني"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="الاسم الثلاثي"
               className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/5 outline-none placeholder:text-muted-foreground focus:ring-primary/40"
             />
-            <input
-              type="password"
+            <select
               required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="كلمة المرور"
+              value={grade}
+              onChange={(e) => {
+                const nextGrade = Number(e.target.value);
+                setGrade(isGradeValue(nextGrade) ? nextGrade : "");
+              }}
               className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/5 outline-none placeholder:text-muted-foreground focus:ring-primary/40"
-            />
+            >
+              <option value="">اختر المرحلة</option>
+              {GRADE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             <button
               type="submit"
-              disabled={busy}
               className="mt-2 w-full rounded-2xl bg-primary py-3 text-[15px] font-bold text-primary-foreground ring-1 ring-primary transition-colors hover:bg-primary/90 disabled:opacity-60"
             >
-              {busy ? "لحظة..." : mode === "signin" ? "تسجيل الدخول" : "إنشاء حساب"}
+              تسجيل الدخول
             </button>
           </form>
-
-          <button
-            onClick={googleSignIn}
-            className="relative mt-2 w-full rounded-2xl bg-white/70 py-3 text-[15px] font-bold ring-1 ring-black/5 transition-colors hover:bg-white"
-          >
-            المتابعة عبر Google
-          </button>
-
-          <p className="relative mt-3 text-center text-[13px] text-muted-foreground">
-            {mode === "signin" ? "جديد؟ " : "عندك حساب؟ "}
-            <button
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-              className="font-bold text-primary"
-            >
-              {mode === "signin" ? "إنشاء حساب" : "تسجيل الدخول"}
-            </button>
-          </p>
         </div>
 
         <div className="glass-card rise p-5">
@@ -152,7 +107,7 @@ function AuthPage() {
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li>• يحل واجباتك ويشرحها خطوة خطوة.</li>
             <li>• يجاوب أي سؤال يخص دروسك.</li>
-            <li>• امتحانات قصيرة تختار مستواها: سهل أو صعب.</li>
+            <li>• امتحانات لكل مادة: سهل 10 أسئلة أو صعب 15 سؤال.</li>
           </ul>
         </div>
 
