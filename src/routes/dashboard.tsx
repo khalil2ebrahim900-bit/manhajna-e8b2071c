@@ -100,8 +100,11 @@ function DashboardPage() {
           </Link>
         </div>
 
-        <p className="font-plex pb-2 text-center text-[11px] text-muted-foreground">
+        <p className="font-plex pb-1 text-center text-[11px] text-muted-foreground">
           منهجنا · المنهج البحريني للمرحلة الإعدادية
+        </p>
+        <p className="font-plex pb-2 text-center text-[11px] text-muted-foreground">
+          من إنشاء: إبراهيم خليل إبراهيم البنخليل
         </p>
       </div>
     </div>
