@@ -3,4 +3,4 @@
 - [x] Set quizzes per subject to easy 10 questions and hard 15 questions.
 - [ ] Improve the Arabic glass design, home screen, navigation and mobile layouts; verify existing student flows.
 - [ ] Add lesson search, filters, favorites and lesson progress using the existing content; clearly distinguish the study guide from verified Ministry resources.
-- [ ] Confirm whether real accounts replace name-and-grade entry, and whether teachers/admin roles are needed before implementing protected accounts and content administration.
+- [ ] Content administration for the owner and teachers: blocked until a secure staff identity and authorization method is agreed; name-only student entry cannot authorize privileged edits.
