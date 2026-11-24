@@ -4,6 +4,7 @@ import { Output, streamText } from "ai";
 import { z } from "zod";
 
 import { createLovableAiGatewayRunIdFetch } from "./ai-gateway.server";
+import { buildQuizPrompt, QuizInput } from "./quiz-scope";
 
 const MODEL = "openai/gpt-6-astra";
 
@@ -85,19 +86,12 @@ export const explainLesson = createServerFn({ method: "POST" })
     return { explanation: await result.text };
   });
 
-const QuizInput = z.object({
-  subject: z.string().min(1).max(60),
-  grade: z.number().int().min(6).max(9),
-  difficulty: z.enum(["easy", "hard"]),
-  questionCount: z.union([z.literal(10), z.literal(15)]),
-});
-
 const QuizSchema = z.object({
   questions: z.array(
     z.object({
       question: z.string(),
-      choices: z.array(z.string()),
-      correctIndex: z.number(),
+      choices: z.array(z.string().min(1)).length(4),
+      correctIndex: z.number().int().min(0).max(3),
       explanation: z.string(),
     }),
   ),
@@ -108,26 +102,18 @@ export type Quiz = z.infer<typeof QuizSchema>;
 export const generateQuiz = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => QuizInput.parse(input))
   .handler(async ({ data }) => {
+    const prompt = buildQuizPrompt(data);
     const lovable = gateway();
-    const level = data.difficulty === "easy" ? "سهل ومباشر" : "صعب ويحتاج تفكير وتحليل";
     const result = streamText({
       model: lovable.responses(MODEL),
       system:
-        "أنت معلم بحريني تصمم اختبارات قصيرة للمرحلة الإعدادية حسب المنهج البحريني. اكتب كل النصوص بالعربية.",
-      prompt: `أنشئ ${data.questionCount} سؤال اختيار من متعدد في مادة ${data.subject} لطالب الصف ${data.grade} حسب المنهج البحريني الرسمي كما في محتوى وزارة التربية، بمستوى ${level}.
-لكل سؤال أربعة اختيارات بالضبط، وحدد رقم الاختيار الصحيح (0 إلى 3)، واكتب شرحاً قصيراً للإجابة الصحيحة.`,
+        "أنت معلم تصمم أسئلة تدريبية محصورة في الدروس المطلوبة. اكتب كل النصوص بالعربية، مع إبقاء الأمثلة الإنجليزية في مادة الإنجليزية.",
+      prompt,
       output: Output.object({ schema: QuizSchema }),
       providerOptions: reasoning,
     });
 
     const quiz = await result.output;
-    return {
-      questions: quiz.questions
-        .filter((q) => q.choices.length === 4)
-        .slice(0, data.questionCount)
-        .map((q) => ({
-          ...q,
-          correctIndex: Math.min(Math.max(q.correctIndex, 0), 3),
-        })),
-    };
+    if (quiz.questions.length !== data.questionCount) throw new Error("Incomplete quiz");
+    return quiz;
   });

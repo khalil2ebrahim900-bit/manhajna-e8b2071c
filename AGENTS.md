@@ -12,3 +12,4 @@
 - Student entry is a local learning profile, not authenticated identity; never use it to authorize staff or private database access.
 - Lesson search indexes the existing browser-safe curriculum; favorites and explicit completion are stored per local student ID, because students do not have authenticated accounts.
 - Shared navigation and footer use AppHeader/AppFooter; semantic theme tokens and shared CSS layout classes provide consistent responsive presentation.
+- Quiz scope is resolved server-side from the shared curriculum by grade, subject, semester and optional unit/lesson indices; never let generation fall back to unrelated topics or claim unverified titles are official.

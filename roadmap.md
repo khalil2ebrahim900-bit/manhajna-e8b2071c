@@ -1,6 +1,7 @@
 - [x] Simplify entry screen: no Google or email login; collect only full name and grade from sixth to third intermediate.
 - [x] Keep the dashboard, AI, quizzes, curriculum, and achievements usable with the simplified student profile.
 - [x] Set quizzes per subject to easy 10 questions and hard 15 questions.
+- [x] Scope quiz generation to the chosen semester, unit or lesson and verify the student flow; keep questions within the requested curriculum topics only.
 - [ ] Improve the Arabic glass design, home screen, navigation and mobile layouts; verify existing student flows.
 - [ ] Add lesson search, filters, favorites and lesson progress using the existing content; clearly distinguish the study guide from verified Ministry resources.
 - [ ] Content administration for the owner and teachers: blocked until a secure staff identity and authorization method is agreed; name-only student entry cannot authorize privileged edits.

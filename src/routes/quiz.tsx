@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AppHeader } from "@/components/AppHeader";
+import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/useProfile";
+import { GRADE_LABELS } from "@/lib/student-profile";
 import { CURRICULUM } from "@/lib/curriculum";
 import { generateQuiz } from "@/lib/ai.functions";
 import { recordQuizResult } from "@/lib/student-progress";
@@ -15,10 +17,10 @@ export const Route = createFileRoute("/quiz")({
       { title: "الامتحانات — منهجنا" },
       {
         name: "description",
-        content: "امتحانات بالاختيارات لكل مادة من المنهج البحريني: سهل 10 أسئلة أو صعب 15 سؤال.",
+         content: "أسئلة تدريبية حسب الصف والمادة والفصل والوحدة أو الدرس المختار: سهل 10 أسئلة أو صعب 15 سؤال.",
       },
       { property: "og:title", content: "الامتحانات — منهجنا" },
-      { property: "og:description", content: "اختبر نفسك في كل مادة بسهل 10 أسئلة أو صعب 15 سؤال." },
+      { property: "og:description", content: "اختر الفصل والوحدة أو الدرس لاختبار تدريبي من 10 أو 15 سؤالاً." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -40,6 +42,9 @@ function QuizPage() {
 
   const [subject, setSubject] = useState<string>("الرياضيات");
   const [difficulty, setDifficulty] = useState<"easy" | "hard">("easy");
+  const [semester, setSemester] = useState<1 | 2>(1);
+  const [unitIndex, setUnitIndex] = useState("");
+  const [lessonIndex, setLessonIndex] = useState("");
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -53,6 +58,8 @@ function QuizPage() {
     [activeGrade],
   );
   const questionCount = difficulty === "easy" ? 10 : 15;
+  const units = CURRICULUM[activeGrade]?.find((item) => item.name === subject)?.semesters[semester] ?? [];
+  const lessons = unitIndex === "" ? [] : units[Number(unitIndex)]?.lessons ?? [];
 
   useEffect(() => {
     if (!authLoading && !profile) navigate({ to: "/" });
@@ -67,7 +74,10 @@ function QuizPage() {
     setBusy(true);
     try {
       const result = await makeQuiz({
-        data: { subject, difficulty, grade: activeGrade, questionCount },
+        data: { subject, difficulty, grade: activeGrade, questionCount, semester,
+          ...(unitIndex === "" ? {} : { unitIndex: Number(unitIndex) }),
+          ...(lessonIndex === "" ? {} : { lessonIndex: Number(lessonIndex) }),
+        },
       });
       if (!result.questions.length) throw new Error("empty");
       setQuestions(result.questions);
@@ -103,21 +113,43 @@ function QuizPage() {
         {!questions && (
           <div className="glass-card rise p-5">
             <h3 className="text-[15px] font-bold">جهّز امتحانك</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{GRADE_LABELS[profile?.grade ?? 7]}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {subjects.map((item) => (
-                <button
+                <Button
+                  variant="outline"
                   key={item}
-                  onClick={() => setSubject(item)}
+                  onClick={() => { setSubject(item); setUnitIndex(""); setLessonIndex(""); }}
                   className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
                     subject === item
                       ? "bg-primary text-primary-foreground ring-1 ring-primary"
-                      : "bg-white text-foreground/70 ring-1 ring-border hover:bg-background"
+                      : "bg-card text-foreground/70 ring-1 ring-border hover:bg-background"
                   }`}
                 >
                   {item}
-                </button>
+                </Button>
               ))}
             </div>
+            <div className="mt-4 space-y-3">
+              <label className="block text-sm font-bold">الفصل الدراسي
+                <select aria-label="الفصل الدراسي" value={semester} onChange={(event) => { setSemester(event.target.value === "2" ? 2 : 1); setUnitIndex(""); setLessonIndex(""); }} className="mt-1 w-full rounded-lg border border-input bg-card p-3 text-foreground">
+                  <option value="1">الفصل الأول</option><option value="2">الفصل الثاني</option>
+                </select>
+              </label>
+              <label className="block text-sm font-bold">الوحدة
+                <select aria-label="الوحدة" value={unitIndex} onChange={(event) => { setUnitIndex(event.target.value); setLessonIndex(""); }} className="mt-1 w-full rounded-lg border border-input bg-card p-3 text-foreground">
+                  <option value="">جميع وحدات الفصل</option>
+                  {units.map((unit, position) => <option key={position} value={position}>{unit.title}</option>)}
+                </select>
+              </label>
+              {unitIndex !== "" && <label className="block text-sm font-bold">الدرس
+                <select aria-label="الدرس" value={lessonIndex} onChange={(event) => setLessonIndex(event.target.value)} className="mt-1 w-full rounded-lg border border-input bg-card p-3 text-foreground">
+                  <option value="">جميع دروس الوحدة</option>
+                  {lessons.map((lesson, position) => <option key={position} value={position}>{lesson.title}</option>)}
+                </select>
+              </label>}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">أسئلة تدريبية مولّدة من عناوين دليل المذاكرة، وليست أسئلة وزارة رسمية؛ لم تُطابق العناوين مع الكتاب الرسمي.</p>
             <div className="mt-4 flex gap-2">
               {(
                 [
@@ -125,26 +157,28 @@ function QuizPage() {
                   { value: "hard", label: "صعب · 15 سؤال" },
                 ] as const
               ).map((level) => (
-                <button
+                <Button
+                  variant="outline"
                   key={level.value}
                   onClick={() => setDifficulty(level.value)}
                   className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
                     difficulty === level.value
                       ? "bg-primary text-primary-foreground ring-1 ring-primary"
-                      : "bg-white text-foreground/70 ring-1 ring-border hover:bg-background"
+                      : "bg-card text-foreground/70 ring-1 ring-border hover:bg-background"
                   }`}
                 >
                   {level.label}
-                </button>
+                </Button>
               ))}
             </div>
-            <button
+            <Button
+                  variant="outline"
               onClick={start}
               disabled={busy}
-              className="mt-4 w-full rounded-2xl bg-foreground py-3 text-[15px] font-bold text-white transition-colors hover:bg-foreground/90 disabled:opacity-60"
+              className="mt-4 h-auto w-full rounded-2xl bg-foreground py-3 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-foreground/90 disabled:opacity-60"
             >
               {busy ? "جاري تجهيز الأسئلة…" : `ابدأ الامتحان · ${questionCount} ${questionCount === 10 ? "أسئلة" : "سؤال"}`}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -170,24 +204,25 @@ function QuizPage() {
                 const chosen = picked === choiceIndex;
                 const state =
                   picked === null
-                    ? "bg-white ring-1 ring-border hover:bg-background"
+                    ? "bg-card ring-1 ring-border hover:bg-background"
                     : isCorrect
                       ? "bg-primary-soft text-primary font-bold ring-1 ring-primary/30"
                       : chosen
                         ? "bg-destructive/10 text-destructive ring-1 ring-destructive/30"
-                        : "bg-white ring-1 ring-border opacity-70";
+                        : "bg-card ring-1 ring-border opacity-70";
                 return (
-                  <button
+                  <Button
+                  variant="outline"
                     key={choiceIndex}
                     disabled={picked !== null}
                     onClick={() => {
                       setPicked(choiceIndex);
                       if (isCorrect) setScore((value) => value + 1);
                     }}
-                    className={`rounded-xl px-4 py-2.5 text-right text-sm transition-colors ${state}`}
+                    className={`h-auto justify-start whitespace-normal rounded-xl px-4 py-2.5 text-right text-sm transition-colors ${state}`}
                   >
                     {choice}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -198,13 +233,14 @@ function QuizPage() {
               </p>
             )}
 
-            <button
+            <Button
+                  variant="outline"
               onClick={next}
               disabled={picked === null}
-              className="mt-4 w-full rounded-2xl bg-foreground py-3 text-[15px] font-bold text-white transition-colors hover:bg-foreground/90 disabled:opacity-50"
+              className="mt-4 h-auto w-full rounded-2xl bg-foreground py-3 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-foreground/90 disabled:opacity-50"
             >
               {index + 1 === questions.length ? "إنهاء" : "التالي"}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -219,12 +255,13 @@ function QuizPage() {
                 ? "ممتاز! درجة كاملة 🎉"
                 : "كمل تدريب، كل محاولة تقوّيك."}
             </p>
-            <button
+            <Button
+                  variant="outline"
               onClick={() => setQuestions(null)}
-              className="mt-4 w-full rounded-2xl bg-primary py-3 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="mt-4 h-auto w-full rounded-2xl bg-primary py-3 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               امتحان جديد
-            </button>
+            </Button>
           </div>
         )}
       </div>
